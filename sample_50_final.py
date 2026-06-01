@@ -1,0 +1,99 @@
+import json
+import random
+import csv
+import pandas as pd
+import math
+from pathlib import Path
+
+BASE = Path(r"C:\Users\simonnien\Desktop\2026詩雅poster\datasets")
+OUTPUT = Path(r"C:\Users\simonnien\Desktop\2026詩雅poster\sample_50_final.csv")
+SEED = 42
+N = 50
+MIN_PER_SOURCE = 5
+
+random.seed(SEED)
+
+def load_cysecbench():
+    path = BASE / "CySecBench/Dataset/Full dataset/cysecbench.csv"
+    with open(path, encoding="utf-8") as f:
+        return [r["Prompt"].strip() for r in csv.DictReader(f) if r["Prompt"].strip()]
+
+def load_cyberattack():
+    path = BASE / "CyberattackAssistance/mitre_benchmark.json"
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    return [(d.get("base_prompt") or "").strip() for d in data if (d.get("base_prompt") or "").strip()]
+
+def load_cyberllm():
+    path = BASE / "CyberLLMInstruct/dataset_creation/final_dataset"
+    latest = sorted(path.glob("*.json"))[-1]
+    with open(latest, encoding="utf-8-sig") as f:
+        data = json.load(f)
+    return [d["instruction"].strip() for d in data if d.get("instruction", "").strip()]
+
+def load_malwarebench():
+    df = pd.read_excel(BASE / "MalwareBench/dataset/attack_prompts.xlsx")
+    return [str(v).strip() for v in df["Original Question"].dropna() if str(v).strip()]
+
+def load_rmcbench():
+    path = BASE / "RMCBench/data/csv/prompt.csv"
+    with open(path, encoding="utf-8") as f:
+        return [r.get("prompt", "").strip() for r in csv.DictReader(f) if r.get("prompt", "").strip()]
+
+def load_llmattacks():
+    path = BASE / "llm-attacks/data/advbench/harmful_behaviors.csv"
+    with open(path, encoding="utf-8") as f:
+        return [r.get("goal", "").strip() for r in csv.DictReader(f) if r.get("goal", "").strip()]
+
+loaders = {
+    "CySecBench":            load_cysecbench,
+    "CyberLLMInstruct":      load_cyberllm,
+    "MalwareBench":          load_malwarebench,
+    "CyberattackAssistance": load_cyberattack,
+    "llm-attacks":           load_llmattacks,
+    "RMCBench":              load_rmcbench,
+}
+
+# 載入
+pools = {src: loader() for src, loader in loaders.items()}
+sources = list(pools.keys())
+total = sum(len(p) for p in pools.values())
+
+# 保底 5 則，剩餘 20 則按比例分配（最大餘數法）
+floor = {src: MIN_PER_SOURCE for src in sources}
+remaining = N - MIN_PER_SOURCE * len(sources)  # = 20
+
+exact_extra = {src: len(pools[src]) / total * remaining for src in sources}
+floor_extra = {src: math.floor(v) for src, v in exact_extra.items()}
+leftover = remaining - sum(floor_extra.values())
+
+# 依餘數大小補足
+by_remainder = sorted(sources, key=lambda s: exact_extra[s] - floor_extra[s], reverse=True)
+extra = dict(floor_extra)
+for src in by_remainder[:leftover]:
+    extra[src] += 1
+
+quotas = {src: floor[src] + extra[src] for src in sources}
+
+# 抽樣
+print(f"總資料池：{total:,} 筆（保底 {MIN_PER_SOURCE} 則，剩餘 {remaining} 則按比例）\n")
+sample = []
+for src in sources:
+    q = quotas[src]
+    picked = random.sample(pools[src], min(q, len(pools[src])))
+    sample.append((src, picked))
+    pct = len(pools[src]) / total * 100
+    print(f"{src}: {len(picked)} 則（保底 {MIN_PER_SOURCE} + 比例 {extra[src]}｜pool {len(pools[src]):,}，佔 {pct:.1f}%）")
+
+random.shuffle(sample := [{"source": src, "prompt": p} for src, picks in sample for p in picks])
+
+# 輸出
+with open(OUTPUT, "w", newline="", encoding="utf-8-sig") as f:
+    writer = csv.DictWriter(f, fieldnames=["id", "source", "prompt",
+                                            "contextual_framing", "operational_actionability"])
+    writer.writeheader()
+    for i, item in enumerate(sample, 1):
+        writer.writerow({"id": i, "source": item["source"], "prompt": item["prompt"],
+                         "contextual_framing": "", "operational_actionability": ""})
+
+print(f"\n完成！{OUTPUT}  共 {len(sample)} 筆")
