@@ -91,19 +91,10 @@ loaders = {
 sample = []
 for source, quota in QUOTA.items():
     pool = loaders[source]()
-    # 去重
-    seen = set()
-    unique = []
-    for p in pool:
-        key = p.lower()[:100]
-        if key not in seen:
-            seen.add(key)
-            unique.append(p)
-
-    picked = random.sample(unique, min(quota, len(unique)))
+    picked = random.sample(pool, min(quota, len(pool)))
     for p in picked:
         sample.append({"source": source, "prompt": p})
-    print(f"{source}: {len(picked)} / {quota} 筆（pool: {len(unique)}）")
+    print(f"{source}: {len(picked)} / {quota} 筆（pool: {len(pool)}）")
 
 # 打亂順序
 random.shuffle(sample)

@@ -34,7 +34,7 @@ python sample_50.py
 ```
 
 - 輸出：`sample_50.csv`
-- 去重後總池：約 20,541 筆
+- 總池：30,081 筆（不去重，保留各資料集完整性）
 - 欄位：`id`, `source`, `prompt`
 - 注意：大資料集（CySecBench、CyberLLMInstruct）會主導結果，小資料集可能抽不到
 
