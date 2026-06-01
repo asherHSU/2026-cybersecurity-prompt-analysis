@@ -61,19 +61,10 @@ with open(path, encoding="utf-8") as f:
         if p:
             prompts.append({"prompt": p, "source": "llm-attacks"})
 
-# 去重
-seen = set()
-unique = []
-for item in prompts:
-    key = item["prompt"].lower()[:100]
-    if key not in seen:
-        seen.add(key)
-        unique.append(item)
-
-print(f"去重後總筆數：{len(unique)}")
+print(f"總筆數：{len(prompts)}")
 
 # 隨機抽樣 50 筆
-sample = random.sample(unique, N)
+sample = random.sample(prompts, N)
 
 # 輸出 CSV
 with open(OUTPUT, "w", newline="", encoding="utf-8-sig") as f:
