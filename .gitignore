@@ -1,0 +1,25 @@
+# Python 虛擬環境
+datasets/CyberLLMInstruct/venv/
+
+# CyberLLMInstruct pipeline 中間產出（可重新生成）
+datasets/CyberLLMInstruct/dataset_creation/raw_data/
+datasets/CyberLLMInstruct/dataset_creation/filtered_data/
+datasets/CyberLLMInstruct/dataset_creation/structured_data/
+datasets/CyberLLMInstruct/dataset_creation/domain_classified/
+datasets/CyberLLMInstruct/dataset_creation/reviewed_data/
+datasets/CyberLLMInstruct/dataset_creation/security_aligned/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Claude 內部設定
+.claude/
+
+# 壓縮檔
+*.zip
+
+# llm-attacks 的 git submodule 大型檔案
+datasets/llm-attacks/experiments/
+datasets/llm-attacks/api_experiments/
