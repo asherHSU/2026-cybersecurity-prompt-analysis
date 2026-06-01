@@ -49,7 +49,7 @@ python sample_50_stratified.py
 ```
 
 - 輸出：`sample_50_stratified.csv`
-- 欄位：`id`, `source`, `prompt`, `contextual_framing`, `operational_actionability`, `care_note`（後三欄為人工編碼欄位，預留空白）
+- 欄位：`id`, `source`, `prompt`, `contextual_framing`, `operational_actionability`（後兩欄為人工編碼欄位，預留空白）
 
 **預設配額：**
 
@@ -108,9 +108,6 @@ Python 3.8 以上。
 | 0 | 未要求具體步驟或執行方式 |
 | 1A | 低可操作性（概念性說明） |
 | 1B | 高可操作性（要求步驟、工具、程式碼或可執行攻擊） |
-
-### CARE Note（受影響社群備註）
-自由填寫，記錄該 prompt 是否涉及特定語言、文化或社群的不對稱風險。
 
 ---
 

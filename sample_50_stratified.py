@@ -102,7 +102,7 @@ random.shuffle(sample)
 # ── 輸出 CSV ─────────────────────────────────────────────────
 with open(OUTPUT, "w", newline="", encoding="utf-8-sig") as f:
     writer = csv.DictWriter(f, fieldnames=["id", "source", "prompt",
-                                            "contextual_framing", "operational_actionability", "care_note"])
+                                            "contextual_framing", "operational_actionability"])
     writer.writeheader()
     for i, item in enumerate(sample, 1):
         writer.writerow({
@@ -111,7 +111,6 @@ with open(OUTPUT, "w", newline="", encoding="utf-8-sig") as f:
             "prompt": item["prompt"],
             "contextual_framing": "",
             "operational_actionability": "",
-            "care_note": "",
         })
 
 print(f"\n完成！輸出至：{OUTPUT}")
