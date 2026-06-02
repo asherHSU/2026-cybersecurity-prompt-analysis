@@ -99,13 +99,16 @@ for src in sources:
 
 random.shuffle(sample)
 
+# 只取補抽的 250 筆（不含原本 50 筆）
+sample_250 = sample[:250]
+
 # 輸出
 with open(OUTPUT, "w", newline="", encoding="utf-8-sig") as f:
     writer = csv.DictWriter(f, fieldnames=["id", "source", "prompt",
                                             "contextual_framing", "operational_actionability"])
     writer.writeheader()
-    for i, item in enumerate(sample, 1):
+    for i, item in enumerate(sample_250, 1):
         writer.writerow({"id": i, "source": item["source"], "prompt": item["prompt"],
                          "contextual_framing": "", "operational_actionability": ""})
 
-print(f"\n完成！{OUTPUT}  共 {len(sample)} 筆（補抽 250 筆，加原本 50 筆 = 共 300 筆）")
+print(f"\n完成！{OUTPUT}  共 {len(sample_250)} 筆（補抽部分，與 sample_50_final.csv 分開放）")
