@@ -140,7 +140,7 @@ def load_all():
             if p and p not in already_coded: pool.append({"source": "CyberLLMInstruct", "prompt": p})
 
     df = pd.read_excel(BASE / "MalwareBench/dataset/attack_prompts.xlsx")
-    for v in df["Original Question"].dropna():
+    for v in df["prompt"].dropna():  # 改用完整的越獄包裝版 prompt
         p = str(v).strip()
         if p and p not in already_coded: pool.append({"source": "MalwareBench", "prompt": p})
 
