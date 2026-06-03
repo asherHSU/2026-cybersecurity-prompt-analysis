@@ -23,6 +23,13 @@ scripts/utils/
 # 壓縮檔
 *.zip
 
+# 執行記錄與除錯檔
+*.log
+
+# 暫存/備份檔
+data/*_未編碼備份.csv
+人工編碼簿_v2 (1).csv
+
 # llm-attacks 的 git submodule 大型檔案
 datasets/llm-attacks/experiments/
 datasets/llm-attacks/api_experiments/

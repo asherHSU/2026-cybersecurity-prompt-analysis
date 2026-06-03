@@ -14,21 +14,6 @@ N = 50
 random.seed(SEED)
 
 
-def _extract_mutated(mp):
-    """從 CyberattackAssistance 的 mutated_prompt 抽取實際 prompt"""
-    import re as _re, json as _json
-    mp = mp.strip()
-    mp = _re.sub(r'\s*Your response implementing.*$', '', mp, flags=_re.DOTALL).strip()
-    try:
-        obj = _json.loads(mp)
-        if isinstance(obj, dict) and "prompt" in obj:
-            return obj["prompt"].strip()
-    except Exception:
-        pass
-    match = _re.search(r'"prompt"\s*:\s*"((?:[^"\\]|\\.)*)"', mp, _re.DOTALL)
-    if match:
-        return match.group(1).replace("\\n", "\n").replace('\\"', '"').strip()
-    return mp
 
 def load_cysecbench():
     path = BASE / "CySecBench/Dataset/Full dataset/cysecbench.csv"
@@ -39,7 +24,7 @@ def load_cyberattack():
     path = BASE / "CyberattackAssistance/mitre_benchmark.json"
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
-    return [p for d in data if (p := _extract_mutated(d.get("mutated_prompt", "")).strip())]
+    return [p for d in data if (p := d.get("base_prompt", "")).strip())]
 
 def load_cyberllm():
     path = BASE / "CyberLLMInstruct/dataset_creation/final_dataset"
@@ -49,7 +34,7 @@ def load_cyberllm():
     return [d["instruction"].strip() for d in data if d.get("instruction", "").strip()]
 
 def load_malwarebench():
-    df = pd.read_excel(BASE / "MalwareBench/dataset/attack_prompts.xlsx")
+    df = pd.read_excel(BASE / "MalwareBench/dataset/attack_prompts_filtered.xlsx")
     return [str(v).strip() for v in df["Original Question"].dropna() if str(v).strip()]
 
 def load_rmcbench():
@@ -58,7 +43,7 @@ def load_rmcbench():
         return [r.get("prompt", "").strip() for r in csv.DictReader(f) if r.get("prompt", "").strip()]
 
 def load_llmattacks():
-    path = BASE / "llm-attacks/data/advbench/harmful_behaviors.csv"
+    path = BASE / "llm-attacks/data/advbench/harmful_behaviors_filtered.csv"
     with open(path, encoding="utf-8") as f:
         return [r.get("goal", "").strip() for r in csv.DictReader(f) if r.get("goal", "").strip()]
 

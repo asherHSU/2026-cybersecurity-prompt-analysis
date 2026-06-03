@@ -1,36 +1,76 @@
-import time, csv, io
+r"""
+即時監控 AI 編碼進度（讀 data/coded_remaining_v2.csv）。
+用法：python scripts\watch_progress.py
+每 10 秒刷新一次儀表板，按 Ctrl+C 結束（不影響編碼）。
+"""
+import time, csv, sys, os
 from pathlib import Path
+from collections import Counter
 
-OUTPUT = Path(r"C:\Users\simonnien\Desktop\2026詩雅poster\coded_remaining.csv")
-TOTAL  = 29781
+sys.stdout.reconfigure(encoding="utf-8")
 
-# 印一次標頭
-print(f"{'時間':<10} {'完成':>7} {'進度':>7}  {'來源':<22} {'CFA':>4} {'sub':>4} {'OA':>4} {'sub':>4}  Prompt")
-print("-" * 120)
+OUTPUT = Path(r"C:\Users\simonnien\Desktop\2026詩雅poster\data\coded_remaining_v2.csv")
+TOTAL  = 29047          # 待編碼總數
+REFRESH = 10            # 刷新秒數
 
-last_done = 0
+CFA = "Binary classfication of Contextual Framing Availibility (CFA)"
+OA  = "Binary classfication of Operational Actionability (OA)"
 
-while True:
-    if OUTPUT.exists():
+def read_rows():
+    if not OUTPUT.exists():
+        return []
+    try:
         with open(OUTPUT, encoding="utf-8-sig", newline="") as f:
-            rows = list(csv.reader(f))
-        done = len(rows) - 1  # 扣掉 header
+            return list(csv.DictReader(f))
+    except Exception:
+        return []
 
-        if done > last_done:
-            pct = done / TOTAL * 100
-            now = time.strftime("%H:%M:%S")
+def bar(pct, width=40):
+    filled = int(pct / 100 * width)
+    return "█" * filled + "·" * (width - filled)
 
-            # 印出新增的那幾筆
-            for row in rows[last_done + 1:done + 1]:
-                if len(row) >= 7 and row[0] != "id":
-                    src     = row[1][:20]
-                    cfa     = row[3]
-                    cfa_sub = row[4]
-                    oa      = row[5]
-                    oa_sub  = row[6]
-                    prompt  = row[2][:50]
-                    print(f"{now:<10} {done:>7,} {pct:>6.1f}%  {src:<22} {cfa:>4} {cfa_sub:>4} {oa:>4} {oa_sub:>4}  {prompt}...")
+# 監控起點（用於算即時速度）
+start_time = time.time()
+start_done = len(read_rows())
 
-            last_done = done
+try:
+    while True:
+        rows = read_rows()
+        done = len(rows)
+        pct = done / TOTAL * 100 if TOTAL else 0
 
-    time.sleep(10)
+        elapsed = time.time() - start_time
+        delta = done - start_done
+        rate = delta / elapsed if elapsed > 0 else 0          # 筆/秒（監控期間）
+        eta_min = (TOTAL - done) / rate / 60 if rate > 0 else 0
+
+        err = sum(1 for r in rows if r.get(CFA, "").strip() == "ERR")
+        src = Counter(r["source"] for r in rows)
+
+        os.system("cls")
+        print("=" * 64)
+        print("  AI 編碼進度監控　（Ctrl+C 結束，不影響編碼）")
+        print("=" * 64)
+        print(f"  時間：{time.strftime('%H:%M:%S')}")
+        print()
+        print(f"  [{bar(pct)}] {pct:5.1f}%")
+        print(f"  已完成：{done:,} / {TOTAL:,} 筆")
+        if err:
+            print(f"  編碼失敗(ERR)：{err:,} 筆（{err/done*100:.1f}%）" if done else "")
+        print()
+        if rate > 0:
+            print(f"  速度：{rate:.1f} 筆/秒　預估剩餘：{eta_min:.0f} 分（約 {eta_min/60:.1f} 小時）")
+        else:
+            print(f"  速度：計算中…")
+        print()
+        print("  各來源完成數：")
+        for s, n in sorted(src.items(), key=lambda x: -x[1]):
+            print(f"    {s:<24} {n:>6,}")
+
+        if done >= TOTAL:
+            print("\n  ✅ 編碼完成！")
+            break
+
+        time.sleep(REFRESH)
+except KeyboardInterrupt:
+    print("\n（已停止監控，編碼仍在背景進行）")
