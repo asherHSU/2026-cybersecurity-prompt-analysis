@@ -13,6 +13,23 @@ N = 50
 
 random.seed(SEED)
 
+
+def _extract_mutated(mp):
+    """從 CyberattackAssistance 的 mutated_prompt 抽取實際 prompt"""
+    import re as _re, json as _json
+    mp = mp.strip()
+    mp = _re.sub(r'\s*Your response implementing.*$', '', mp, flags=_re.DOTALL).strip()
+    try:
+        obj = _json.loads(mp)
+        if isinstance(obj, dict) and "prompt" in obj:
+            return obj["prompt"].strip()
+    except Exception:
+        pass
+    match = _re.search(r'"prompt"\s*:\s*"((?:[^"\\]|\\.)*)"', mp, _re.DOTALL)
+    if match:
+        return match.group(1).replace("\\n", "\n").replace('\\"', '"').strip()
+    return mp
+
 def load_cysecbench():
     path = BASE / "CySecBench/Dataset/Full dataset/cysecbench.csv"
     with open(path, encoding="utf-8") as f:
@@ -22,7 +39,7 @@ def load_cyberattack():
     path = BASE / "CyberattackAssistance/mitre_benchmark.json"
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
-    return [(d.get("base_prompt") or "").strip() for d in data if (d.get("base_prompt") or "").strip()]
+    return [p for d in data if (p := _extract_mutated(d.get("mutated_prompt", "")).strip())]
 
 def load_cyberllm():
     path = BASE / "CyberLLMInstruct/dataset_creation/final_dataset"

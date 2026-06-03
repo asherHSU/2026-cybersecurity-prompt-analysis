@@ -36,18 +36,18 @@
 
 ## 資料集位置
 
-| 資料集 | 路徑 | 筆數 | Prompt 欄位 |
-|--------|------|------|-------------|
-| CySecBench | `datasets/CySecBench/Dataset/Full dataset/cysecbench.csv` | 12,662 | `Prompt` |
-| CyberattackAssistance | `datasets/CyberattackAssistance/mitre_benchmark.json` | 1,000 | `base_prompt` |
-| CyberLLMInstruct | `datasets/CyberLLMInstruct/dataset_creation/final_dataset/final_cybersecurity_dataset_20260531_042849.json` | 11,906 | `instruction` |
-| MalwareBench | `datasets/MalwareBench/dataset/attack_prompts.xlsx` | 3,520 | `Original Question` |
-| RMCBench | `datasets/RMCBench/data/csv/prompt.csv` | 473 | `prompt` |
-| llm-attacks | `datasets/llm-attacks/data/advbench/harmful_behaviors.csv` | 520 | `goal` |
+| 資料集 | 路徑 | 筆數 | Prompt 欄位 | 說明 |
+|--------|------|------|-------------|------|
+| CySecBench | `datasets/CySecBench/Dataset/Full dataset/cysecbench.csv` | 12,662 | `Prompt` | 直接惡意問題，無包裝 |
+| CyberattackAssistance | `datasets/CyberattackAssistance/mitre_benchmark.json` | 1,000 | `base_prompt` | 基於 MITRE ATT&CK，有情境包裝 |
+| CyberLLMInstruct | `datasets/CyberLLMInstruct/dataset_creation/final_dataset/final_cybersecurity_dataset_20260531_042849.json` | 11,906 | `instruction` | 知識性問答，模板產生 |
+| MalwareBench | `datasets/MalwareBench/dataset/attack_prompts.xlsx` | 3,520 | `prompt` | 完整越獄包裝版（含多種 AttackMethod）|
+| RMCBench | `datasets/RMCBench/data/csv/prompt.csv` | 473 | `prompt` | 惡意程式碼生成請求 |
+| llm-attacks | `datasets/llm-attacks/data/advbench/harmful_behaviors.csv` | 520 | `goal` | 直白有害行為清單 |
 
 **總計：30,081 筆**
 
-> 備註：RMCBench 資料夾內有兩個檔案：`jailbreak-prompt.csv`（78 筆，越獄包裝模板）與 `prompt.csv`（473 筆，實際惡意 prompt）。腳本使用的是 `prompt.csv`。
+> **RMCBench 注意**：資料夾內有兩個檔案：`jailbreak-prompt.csv`（78 筆，越獄包裝模板）與 `prompt.csv`（473 筆，實際惡意 prompt）。腳本使用的是 `prompt.csv`。
 
 ---
 
