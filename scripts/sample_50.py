@@ -4,19 +4,6 @@ import csv
 import pandas as pd
 from pathlib import Path
 
-def _extract_mutated(mp):
-    mp = mp.strip()
-    mp = re.sub(r'\s*Your response implementing.*$', '', mp, flags=re.DOTALL).strip()
-    try:
-        obj = json.loads(mp)
-        if isinstance(obj, dict) and "prompt" in obj:
-            return obj["prompt"].strip()
-    except Exception:
-        pass
-    match = re.search(r'"prompt"\s*:\s*"((?:[^"\\]|\\.)*)"', mp, re.DOTALL)
-    if match:
-        return match.group(1).replace("\\n", "\n").replace('\\"', '"').strip()
-    return mp
 
 BASE = Path(r"C:\Users\simonnien\Desktop\2026詩雅poster\datasets")
 OUTPUT = Path(r"C:\Users\simonnien\Desktop\2026詩雅poster\sample_50.csv")
@@ -54,7 +41,7 @@ for item in data:
         prompts.append({"prompt": p, "source": "CyberLLMInstruct"})
 
 # 4. MalwareBench (xlsx)
-path = BASE / "MalwareBench/dataset/attack_prompts.xlsx"
+path = BASE / "MalwareBench/dataset/attack_prompts_filtered.xlsx"
 df = pd.read_excel(path)
 for val in df["Original Question"].dropna():
     prompts.append({"prompt": str(val).strip(), "source": "MalwareBench"})
@@ -68,7 +55,7 @@ with open(path, encoding="utf-8") as f:
             prompts.append({"prompt": p, "source": "RMCBench"})
 
 # 6. llm-attacks
-path = BASE / "llm-attacks/data/advbench/harmful_behaviors.csv"
+path = BASE / "llm-attacks/data/advbench/harmful_behaviors_filtered.csv"
 with open(path, encoding="utf-8") as f:
     for row in csv.DictReader(f):
         p = row.get("goal", "").strip()

@@ -4,19 +4,6 @@ import csv
 import pandas as pd
 from pathlib import Path
 
-def _extract_mutated(mp):
-    mp = mp.strip()
-    mp = re.sub(r'\s*Your response implementing.*$', '', mp, flags=re.DOTALL).strip()
-    try:
-        obj = json.loads(mp)
-        if isinstance(obj, dict) and "prompt" in obj:
-            return obj["prompt"].strip()
-    except Exception:
-        pass
-    match = re.search(r'"prompt"\s*:\s*"((?:[^"\\]|\\.)*)"', mp, re.DOTALL)
-    if match:
-        return match.group(1).replace("\\n", "\n").replace('\\"', '"').strip()
-    return mp
 
 BASE = Path(r"C:\Users\simonnien\Desktop\2026詩雅poster\datasets")
 OUTPUT = Path(r"C:\Users\simonnien\Desktop\2026詩雅poster\sample_50_stratified.csv")
@@ -66,7 +53,7 @@ def load_cyberllm():
     return [item["instruction"].strip() for item in data if item.get("instruction", "").strip()]
 
 def load_malwarebench():
-    path = BASE / "MalwareBench/dataset/attack_prompts.xlsx"
+    path = BASE / "MalwareBench/dataset/attack_prompts_filtered.xlsx"
     df = pd.read_excel(path)
     # 用 Original Question（原始問題）而非越獄包裝後的 prompt
     return [str(v).strip() for v in df["Original Question"].dropna() if str(v).strip()]
@@ -82,7 +69,7 @@ def load_rmcbench():
     return rows
 
 def load_llmattacks():
-    path = BASE / "llm-attacks/data/advbench/harmful_behaviors.csv"
+    path = BASE / "llm-attacks/data/advbench/harmful_behaviors_filtered.csv"
     rows = []
     with open(path, encoding="utf-8") as f:
         for row in csv.DictReader(f):
