@@ -14,6 +14,9 @@ __pycache__/
 *.pyc
 *.pyo
 
+# 修補型工具腳本
+scripts/utils/
+
 # Claude 內部設定
 .claude/
 

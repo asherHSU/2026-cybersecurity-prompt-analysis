@@ -6,6 +6,34 @@
 
 ---
 
+## 專案結構
+
+```
+2026詩雅poster/
+├── README.md
+├── .gitignore
+├── data/                         ← 所有資料檔案
+│   ├── 人工編碼簿.csv              （300 筆人工編碼完成）
+│   ├── coded_remaining.csv        （29,263 筆 AI 自動編碼）
+│   ├── 編碼標準.jpg                （CFA / OA 編碼標準圖）
+│   ├── sample_50_final.csv        （最終版抽樣 50 筆）
+│   ├── sample_250_final.csv       （補抽 250 筆，合計 300 筆）
+│   ├── sample_50_proportional.csv （純比例版抽樣 50 筆）
+│   ├── sample_50_stratified.csv   （非比例分層版 50 筆）
+│   └── sample_50.csv              （純隨機版 50 筆）
+├── scripts/                      ← 主要腳本
+│   ├── sample_50_final.py         （最終版抽樣：保底 5 + 比例分配）
+│   ├── sample_250_final.py        （補抽 250 筆，排除已抽 50 筆）
+│   ├── sample_50_proportional.py  （純比例版抽樣）
+│   ├── sample_50_stratified.py    （非比例分層版）
+│   ├── sample_50.py               （純隨機版）
+│   ├── code_remaining.py          （Ollama AI 編碼主腳本）
+│   └── watch_progress.py          （即時進度監控）
+└── datasets/                     ← 原始資料集（六個）
+```
+
+---
+
 ## 資料集位置
 
 | 資料集 | 路徑 | 筆數 | Prompt 欄位 |
@@ -25,54 +53,86 @@
 
 ## 抽樣腳本
 
-### `sample_50.py` — 純隨機抽樣
+### 推薦使用：`scripts/sample_50_final.py`
 
-所有資料集合併後去重，不分比例隨機抽取 50 筆。
+每個資料集保底 5 筆，剩餘 20 筆按比例分配（最大餘數法）。
 
 ```bash
-python sample_50.py
+python scripts/sample_50_final.py
 ```
 
-- 輸出：`sample_50.csv`
-- 總池：30,081 筆（不去重，保留各資料集完整性）
-- 欄位：`id`, `source`, `prompt`
-- 注意：大資料集（CySecBench、CyberLLMInstruct）會主導結果，小資料集可能抽不到
+輸出：`data/sample_50_final.csv`（50 筆，含編碼欄位）
+
+**配額：**
+
+| 資料集 | 保底 | 比例追加 | 合計 |
+|--------|------|---------|------|
+| CySecBench | 5 | +9 | 14 |
+| CyberLLMInstruct | 5 | +8 | 13 |
+| MalwareBench | 5 | +2 | 7 |
+| CyberattackAssistance | 5 | +1 | 6 |
+| llm-attacks | 5 | +0 | 5 |
+| RMCBench | 5 | +0 | 5 |
+
+### 補抽：`scripts/sample_250_final.py`
+
+保底 30 筆 + 比例分配，排除已抽的 50 筆，輸出 250 筆。
+
+```bash
+python scripts/sample_250_final.py
+```
+
+輸出：`data/sample_250_final.csv`（250 筆，與 sample_50_final.csv 合計 300 筆不重複）
 
 ---
 
-### `sample_50_stratified.py` — 分層抽樣
+## AI 自動編碼
 
-依照預設配額從各資料集分別抽樣，確保每個資料集都有代表性。
+### `scripts/code_remaining.py`
+
+以 300 筆人工編碼（`data/人工編碼簿.csv`）為 few-shot 範例，用 Ollama mistral:7b 對剩餘 ~29,781 筆自動編碼。
 
 ```bash
-python sample_50_stratified.py
+python scripts/code_remaining.py
 ```
 
-- 輸出：`sample_50_stratified.csv`
-- 欄位：`id`, `source`, `prompt`, `contextual_framing`, `operational_actionability`（後兩欄為人工編碼欄位，預留空白）
-
-**預設配額：**
-
-| 資料集 | 配額 | 選擇理由 |
-|--------|------|----------|
-| CySecBench | 15 | 最大資料集，代表「未包裝惡意 prompt」 |
-| CyberLLMInstruct | 10 | 知識性 instruction，與其他資料集形成對比 |
-| CyberattackAssistance | 8 | MITRE ATT&CK 框架，有情境包裝 |
-| MalwareBench | 8 | 惡意軟體導向，具體操作請求 |
-| llm-attacks | 5 | 極直白有害請求，無任何包裝 |
-| RMCBench | 4 | 惡意程式碼請求（Generate code for virus/worm 等） |
-
-如需調整配額，修改腳本中的 `QUOTA` 字典，確保總和等於 50。
+- 輸出：`data/coded_remaining.csv`
+- 支援中斷續跑
+- 每 50 筆自動存檔
 
 ---
 
 ## 執行環境需求
 
 ```bash
-pip install pandas openpyxl
+pip install pandas openpyxl requests
 ```
 
-Python 3.8 以上。
+Python 3.8 以上，需安裝 [Ollama](https://ollama.com) 並下載 mistral:7b。
+
+---
+
+## 編碼架構
+
+### Contextual Framing Availability (CFA)
+prompt 是否提供情境定位（模型行為設定、使用目的、角色、任務背景等）？
+
+| 代碼 | 定義 |
+|------|------|
+| 0 | 未提供任何情境 |
+| 1A | 有提供情境，但首句之外沒有進一步描述 |
+| 1B | 有提供情境，且首句之後尚有進一步描述 |
+| 999 | 非資安相關 prompt（詐欺、金融犯罪等） |
+
+### Operational Actionability (OA)
+prompt 是否要求具體操作細節（步驟、工具、程式碼或可執行攻擊）？
+
+| 代碼 | 定義 |
+|------|------|
+| 0 | 未要求具體操作細節 |
+| 1A | 要求知識層面的純文字內容（步驟指示、教學、策略） |
+| 1B | 要求具武器化程度的內容（可執行程式碼、腳本、惡意軟體） |
+| 999 | 非資安相關（與 CFA=999 同步） |
 
 ---
 
@@ -85,29 +145,6 @@ Python 3.8 以上。
 - 資料來源：NVD CVE、MITRE ATT&CK、CAPEC、arXiv、OpenCVE、Microsoft Security、Ubuntu USN、CTFtime
 - 缺少來源：VirusTotal、AlienVault OTX、Shodan 等（API 呼叫失敗）
 - 生成時間：2026-05-29 至 2026-05-31
-- 內容性質：知識性問答（「Explain CVE-XXXX」、「How does X attack work?」），非直接攻擊指令
-
-論文中引用此資料集時，應說明為自行重現版本，並與原始論文數字區分。
-
----
-
-## 編碼架構（人工標註用）
-
-`sample_50_stratified.csv` 預留三個編碼欄位：
-
-### Contextual Framing（情境包裝）
-| 代碼 | 定義 |
-|------|------|
-| 0 | 無情境，直接惡意問題 |
-| 1A | 有情境且有進一步說明（角色、目的、背景） |
-| 1B | 有情境，但僅一句話，未進一步說明 |
-
-### Operational Actionability（可操作性）
-| 代碼 | 定義 |
-|------|------|
-| 0 | 未要求具體步驟或執行方式 |
-| 1A | 低可操作性（概念性說明） |
-| 1B | 高可操作性（要求步驟、工具、程式碼或可執行攻擊） |
 
 ---
 
