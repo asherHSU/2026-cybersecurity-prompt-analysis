@@ -28,13 +28,7 @@
 │   ├── sample_50_stratified.py    （非比例分層版）
 │   ├── sample_50.py               （純隨機版）
 │   ├── code_remaining.py          （Ollama AI 編碼主腳本）
-│   ├── watch_progress.py          （即時進度監控）
-│   └── utils/                    ← 工具 / 修復腳本
-│       ├── check_quality.py       （資料品質驗證）
-│       ├── fix_all_issues.py      （修復編碼異常）
-│       ├── apply_manual_codes.py  （套用人工補碼）
-│       ├── rerun_err.py           （重跑 ERR 筆數）
-│       └── ...
+│   └── watch_progress.py          （即時進度監控）
 └── datasets/                     ← 原始資料集（六個）
 ```
 
