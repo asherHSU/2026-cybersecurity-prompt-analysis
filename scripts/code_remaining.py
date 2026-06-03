@@ -4,9 +4,23 @@
 - 輸出格式與人工編碼簿一致（四欄）
 """
 
-import csv, json, random, requests
+import csv, json, random, requests, re
 import pandas as pd
 from pathlib import Path
+
+def _extract_mutated(mp):
+    mp = mp.strip()
+    mp = re.sub(r'\s*Your response implementing.*$', '', mp, flags=re.DOTALL).strip()
+    try:
+        obj = json.loads(mp)
+        if isinstance(obj, dict) and "prompt" in obj:
+            return obj["prompt"].strip()
+    except Exception:
+        pass
+    match = re.search(r'"prompt"\s*:\s*"((?:[^"\\]|\\.)*)"', mp, re.DOTALL)
+    if match:
+        return match.group(1).replace("\\n", "\n").replace('\\"', '"').strip()
+    return mp
 
 BASE        = Path(r"C:\Users\simonnien\Desktop\2026詩雅poster\datasets")
 CODED_FILE  = Path(r"C:\Users\simonnien\Desktop\2026詩雅poster\人工編碼簿.csv")
@@ -130,7 +144,7 @@ def load_all():
 
     with open(BASE / "CyberattackAssistance/mitre_benchmark.json", encoding="utf-8") as f:
         for item in json.load(f):
-            p = (item.get("base_prompt") or "").strip()
+            p = _extract_mutated(item.get("mutated_prompt", "")).strip()
             if p and p not in already_coded: pool.append({"source": "CyberattackAssistance", "prompt": p})
 
     latest = sorted((BASE / "CyberLLMInstruct/dataset_creation/final_dataset").glob("*.json"))[-1]

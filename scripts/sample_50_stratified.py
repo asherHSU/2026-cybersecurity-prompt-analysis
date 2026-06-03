@@ -1,8 +1,22 @@
-import json
+import json, re
 import random
 import csv
 import pandas as pd
 from pathlib import Path
+
+def _extract_mutated(mp):
+    mp = mp.strip()
+    mp = re.sub(r'\s*Your response implementing.*$', '', mp, flags=re.DOTALL).strip()
+    try:
+        obj = json.loads(mp)
+        if isinstance(obj, dict) and "prompt" in obj:
+            return obj["prompt"].strip()
+    except Exception:
+        pass
+    match = re.search(r'"prompt"\s*:\s*"((?:[^"\\]|\\.)*)"', mp, re.DOTALL)
+    if match:
+        return match.group(1).replace("\\n", "\n").replace('\\"', '"').strip()
+    return mp
 
 BASE = Path(r"C:\Users\simonnien\Desktop\2026詩雅poster\datasets")
 OUTPUT = Path(r"C:\Users\simonnien\Desktop\2026詩雅poster\sample_50_stratified.csv")
@@ -39,7 +53,7 @@ def load_cyberattack():
         data = json.load(f)
     rows = []
     for item in data:
-        p = (item.get("base_prompt") or "").strip()
+        p = _extract_mutated(item.get("mutated_prompt", "")).strip()
         if p:
             rows.append(p)
     return rows
